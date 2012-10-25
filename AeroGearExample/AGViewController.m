@@ -31,9 +31,9 @@
     id<AGPipe> tasksPipe;
     
     // create the 'todo' pipeline, which contains the 'projects' pipe:
-    AGPipeline* todo = [AGPipeline pipelineWithPipe:@"tasks" baseURL:projectsURL type:@"REST"];
+    AGPipeline *todo = [AGPipeline pipeline:projectsURL];
     
-    tasksPipe = [todo get:@"tasks"];
+    tasksPipe = [todo add:@"tasks"];
     
     [tasksPipe read:^(id responseObject) {
         
