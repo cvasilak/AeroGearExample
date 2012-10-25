@@ -16,10 +16,12 @@
  */
 
 #import "AGRestAdapter.h"
+#import "AGRestAuthentication.h"
 #import "AGHttpClient.h"
 
 @implementation AGRestAdapter {
     AGHttpClient* _restClient;
+    AGRestAuthentication* _authModule;
 }
 
 @synthesize type = _type;
@@ -34,35 +36,41 @@
     return self;
 }
 
--(id) initForURL:(NSURL*) url {
+-(id) initForURL:(NSURL*) url authModule:(id<AGAuthenticationModule>) authModule{
     self = [self init];
     if (self) {
         _url = url.absoluteString;
         _restClient = [AGHttpClient clientFor:url];
         _restClient.parameterEncoding = AFJSONParameterEncoding;
+        
+        _authModule = (AGRestAuthentication*) authModule;
     }
     return self;
 }
 
-+(id) pipeForURL:(NSURL*) url {
-    return [[self alloc] initForURL:url];
++(id) pipeForURL:(NSURL*) url authModule:(id<AGAuthenticationModule>) authModule{
+    return [[self alloc] initForURL:url authModule:authModule];
 }
 
 // read all, via HTTP GET
 -(void) read:(void (^)(id responseObject))success
      failure:(void (^)(NSError *error))failure {
+    
+    // try to add auth.token:
+    [self applyAuthToken];
+    
 
     // TODO: better Endpoints....
     [_restClient getPath:@"" parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
         
         if (success) {
-            NSLog(@"Invoking successblock....");
+            //TODO: NSLog(@"Invoking successblock....");
             success(responseObject);
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         
         if (failure) {
-            NSLog(@"Invoking failure block....");
+            //TODO: NSLog(@"Invoking failure block....");
             failure(error);
         }
     } ];
@@ -71,42 +79,45 @@
 -(void) readWithFilter:(id)filterObject
                success:(void (^)(id responseObject))success
                failure:(void (^)(NSError *error))failure {
-    // TODO...
+//    // try to add auth.token:
+//    [self applyAuthToken];
+// TODO...
 }
-
 
 -(void) save:(NSDictionary*) object
      success:(void (^)(id responseObject))success
      failure:(void (^)(NSError *error))failure {
 
+    // try to add auth.token:
+    [self applyAuthToken];
+    
     // Does a PUT or POST based on the fact if the object
     // already exists (if there is an 'id').
     
     // the blocks are unique to PUT and POST, so let's define them up-front:
     id successCallback = ^(AFHTTPRequestOperation *operation, id responseObject) {
-        //NSLog(@"Create Project response: %@", responseObject);
         if (success) {
-            NSLog(@"Invoking successblock....");
+            //TODO: NSLog(@"Invoking successblock....");
             success(responseObject);
         }
     };
     
     id failureCallback = ^(AFHTTPRequestOperation *operation, NSError *error) {
         if (failure) {
-            NSLog(@"Invoking failure block....");
+            //TODO: NSLog(@"Invoking failure block....");
             failure(error);
         }
     };
     
     
     if ([object objectForKey:@"id"]) {
-        NSLog(@"HTTP PUT to update the given object");
+        //TODO: NSLog(@"HTTP PUT to update the given object");
         NSString* updateIdPath = [object objectForKey:@"id"];
         [_restClient putPath:updateIdPath parameters:object success:successCallback failure:failureCallback];
         return;
     }
     else {
-        NSLog(@"HTTP POST to create the given object");
+        //TODO: NSLog(@"HTTP POST to create the given object");
         [_restClient postPath:@"" parameters:object success:successCallback failure:failureCallback];
         return;
     }
@@ -115,6 +126,9 @@
 -(void) remove:(id) key
        success:(void (^)(id responseObject))success
        failure:(void (^)(NSError *error))failure {
+
+    // try to add auth.token:
+    [self applyAuthToken];
 
     id deleteKey;
     if ([key isKindOfClass:[NSString class]]) {
@@ -126,17 +140,24 @@
     [_restClient deletePath:deleteKey parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
         
         if (success) {
-            NSLog(@"Invoking successblock....");
+            //TODO: NSLog(@"Invoking successblock....");
             success(responseObject);
         }
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
         
         if (failure) {
-            NSLog(@"Invoking failure block....");
+            //TODO: NSLog(@"Invoking failure block....");
             failure(error);
         }
     } ];
 
+}
+
+// helper method:
+-(void) applyAuthToken {
+    if ([_authModule isAuthenticated]) {
+        [_restClient setDefaultHeader:@"Auth-Token" value:[_authModule authToken]];
+    }
 }
 
 -(NSString *) description {
