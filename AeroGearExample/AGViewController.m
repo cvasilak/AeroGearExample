@@ -31,10 +31,12 @@
     id<AGPipe> tasksPipe;
     
     // create the 'todo' pipeline, which contains the 'projects' pipe:
-    AGPipeline *todo = [AGPipeline pipeline:projectsURL];
+    AGPipeline *todo = [AGPipeline pipelineWithBaseURL:projectsURL];
     
-    tasksPipe = [todo add:@"tasks"];
-    
+    tasksPipe = [todo pipe:^(id<AGPipeConfig> config) {
+        [config setName:@"tasks"];
+    }];
+
     [tasksPipe read:^(id responseObject) {
         
         _tasks = responseObject;
@@ -44,7 +46,6 @@
     } failure:^(NSError *error) {
         NSLog(@"An error has occured during fetch! \n%@", error);
     }];    
-    
 }
 
 - (void)viewDidUnload

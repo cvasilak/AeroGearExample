@@ -1,4 +1,3 @@
 platform :ios
 
-pod 'AeroGear', '1.0.0.M1'
-
+pod 'AeroGear', :git => 'https://github.com/aerogear/aerogear-ios.git', :commit=> 'e8969c9b434412312e93b99eb7da6caa7f80f3aa'
